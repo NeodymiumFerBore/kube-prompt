@@ -10,14 +10,15 @@
 #     Print information from current context (using `kubectl config view --minify`),
 #     with no trailing line feed.
 #     Takes an optional format string as argument.
+#     FORMAT can also be set with the environment variable KUBE_PS1_FORMAT.
 #
 # DEFAULTS
 #     If no FORMAT is given, print (⎈|%n) (current context namespace with '⎈|' prefix, in parentheses).
 #     If no current_context is defined in KUBECONFIG, print "context not set"
-#     (even if FORMAT is supplied) to ensure to not induce the user in error.
 #
 # ARGUMENTS
-#     FORMAT     An optional format string (see FORMAT). Default: (⎈|%n)
+#     FORMAT     An optional format string (see FORMAT). Default: (⎈|%n).
+#                Takes precedence over environment variable KUBE_PS1_FORMAT.
 #
 # FORMAT
 #     %u - current context user name
@@ -41,11 +42,12 @@
 #   Output in bold blue: ⎈|my-namespace
 
 function __kube_ps1() {
-  local format="${1:-(⎈|%n)}"
+  local format="${KUBE_PS1_FORMAT-(⎈|%n)}" # Expand default if unset, but respect empty string
+  local format="${1-$format}"
   local context user cluster namespace
 
   # If a format string was supplied without any value to substitute, just print it and return
-  if [ $# -gt 1 ] && ! grep -Eq '%[uncC]' <<<"$format"; then
+  if ! grep -Eq '%[uncC]' <<<"$format"; then
     printf -- "$format"
     return
   fi
